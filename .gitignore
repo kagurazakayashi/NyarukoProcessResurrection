@@ -1,0 +1,6 @@
+*.xz
+i18n/
+*.exe
+*.log
+vendor
+bin
