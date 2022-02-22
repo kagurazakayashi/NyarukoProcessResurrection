@@ -7,16 +7,30 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
 
+var (
+	g_width  int
+	g_height int
+)
+
 func main() {
+	g_width, g_height = terminalWindowSize()
 	setupCloseHandler()
 	log(logF(), LogLevelInfo, "应用程序保活")
 	log(logF(), LogLevelDebug, "加载配置文件...")
 	LoadConfigFile()
-	terminalWindowSize()
+	for {
+		processInfos, err := ProcessList()
+		if err != nil {
+			break
+		}
+		ProcessListPrint(processInfos)
+		time.Sleep(time.Duration(1) * time.Second)
+	}
 }
 
 // LoadConfigFile 載入啟動初始設定

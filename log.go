@@ -143,3 +143,69 @@ func terminalWindowSize() (int, int) {
 	}
 	return width, height
 }
+
+// substrTo 字串裁剪
+// 從 start 開始（包括），到 end 結束（不包括）
+// end 為 0 時裁剪到字串末尾
+// end 為負數時表示從後至前裁剪多少位
+func substrTo(str string, start int, end int) string {
+	var strlength int = len(str)
+	if strlength == 0 || start > strlength-1 {
+		return ""
+	}
+	var nend int = end
+	if end < 0 {
+		nend = strlength + end
+	}
+	if end == 0 || nend > strlength {
+		nend = strlength
+	}
+	if start > nend {
+		return ""
+	}
+	return str[start:nend]
+}
+
+// substr 字串裁剪
+// 從 start 開始（包括），取 length 长度的字符串
+func substr(str string, start int, length int) string {
+	return substrTo(str, start, start+length)
+}
+
+// tabstr 不足位補齊
+// autoSub 超出位裁剪
+func tabstr(str string, separator string, toLength int, isRight bool, autoSub bool) string {
+	var strlength int = len(str)
+	var newStr string = str
+	if len(separator) == 0 {
+		separator = " "
+	}
+	if strlength < toLength {
+		var addLength int = toLength - strlength
+		for i := 0; i < addLength; i++ {
+			if isRight {
+				newStr = separator + newStr
+			} else {
+				newStr += separator
+			}
+		}
+	} else if strlength > toLength && autoSub {
+		newStr = substr(str, 0, toLength)
+	}
+	return newStr
+}
+
+// join 陣列轉字串
+// stringArray 原始字串陣列
+// separator 分隔符
+func join(stringArray []string, separator string) string {
+	var end int = len(stringArray) - 1
+	var newStr string = ""
+	for i, v := range stringArray {
+		newStr += v
+		if i < end {
+			newStr += separator
+		}
+	}
+	return newStr
+}
