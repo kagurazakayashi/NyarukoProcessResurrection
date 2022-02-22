@@ -16,6 +16,7 @@ func main() {
 	log(logF(), LogLevelInfo, "应用程序保活")
 	log(logF(), LogLevelDebug, "加载配置文件...")
 	LoadConfigFile()
+	terminalWindowSize()
 }
 
 // LoadConfigFile 載入啟動初始設定
