@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -19,11 +23,11 @@ type ProcessInfo struct {
 }
 
 // ProcessList 獲取程序列表
-func ProcessList() ([]ProcessInfo, error) {
+func ProcessList() error {
 	var processInfos []ProcessInfo = []ProcessInfo{}
 	pids, err := process.Pids()
 	if err != nil || len(pids) == 0 {
-		return nil, err
+		return err
 	}
 	for _, pid := range pids {
 		p, err := process.NewProcess(pid)
@@ -31,16 +35,21 @@ func ProcessList() ([]ProcessInfo, error) {
 			log(logF(), LogLevelWarning, "NewProcess "+err.Error())
 			continue
 		}
-		pName, err := p.Name()
-		if err != nil {
-			log(logF(), LogLevelWarning, "pName "+err.Error())
-			pName = ""
-			continue
-		}
 		pCmd, err := p.Cmdline()
 		if err != nil {
 			log(logF(), LogLevelWarning, "pCmd "+err.Error())
 			pCmd = ""
+			continue
+		}
+		for _, path := range g_paths {
+			if pCmd != path {
+				continue
+			}
+		}
+		pName, err := p.Name()
+		if err != nil {
+			log(logF(), LogLevelWarning, "pName "+err.Error())
+			pName = ""
 			continue
 		}
 		pStart, err := p.CreateTime()
@@ -79,7 +88,8 @@ func ProcessList() ([]ProcessInfo, error) {
 		}
 		processInfos = append(processInfos, pInfo)
 	}
-	return processInfos, nil
+	g_process = processInfos
+	return nil
 }
 
 // ProcessListPrint 將獲取到的程序列表輸出
@@ -102,7 +112,7 @@ func ProcessListPrint(processInfos []ProcessInfo) {
 		line = append(line, tabstr(strconv.FormatInt(int64(pInfo.cpu), 10), "", 4, true, true))
 		line = append(line, tabstr(strconv.FormatInt(int64(pInfo.mem), 10), "", 7, true, true))
 		line = append(line, tabstr(pInfo.cmd, "", g_width-58, false, true))
-		var lineStr string = join(line, " | ")
+		var lineStr string = strings.Join(line, " | ")
 		g_view1s = append(g_view1s, lineStr)
 		g_view1c = append(g_view1c, ConsoleColorGreen)
 		if len(g_view1s) >= g_height/2 {
@@ -129,4 +139,68 @@ func FloatRound(f float64, n int) float64 {
 	format := "%." + strconv.Itoa(n) + "f"
 	res, _ := strconv.ParseFloat(fmt.Sprintf(format, f), 64)
 	return res
+}
+
+func pathToFileName(path string) string {
+	var fileName string = filepath.Base(path)
+	var fileNameArr []string = strings.Split(fileName, " ")
+	return fileNameArr[0]
+}
+
+func ProcessWhenClose() bool {
+	var nexe []*exec.Cmd
+	var nlog []*os.File
+	isRunClose := false
+	for i, exe := range g_exe {
+		if exe == nil || exe.ProcessState.ExitCode() != -1 {
+			var logFile *os.File = g_exelog[i]
+			var path string = exe.Path
+			log(logF(), LogLevelWarning, "进程退出: "+path)
+			_, err := logFile.WriteString("===== EXIT " + time.Now().Format("06-01-02 15:04:05") + " ======")
+			if err != nil {
+				log(logF(), LogLevelError, err.Error())
+			}
+			err = logFile.Close()
+			if err != nil {
+				log(logF(), LogLevelError, err.Error())
+			}
+			// backgroundRunPath(path)
+			isRunClose = true
+		} else {
+			nexe = append(nexe, exe)
+			nlog = append(nlog, g_exelog[i])
+		}
+	}
+	g_exe = nexe
+	g_exelog = nlog
+	return isRunClose
+}
+
+func ProcessChk() {
+	for _, path := range g_paths { // 配置檔案中的路徑
+		var fileName string = pathToFileName(path)
+		var isRunning bool = false
+		for _, prog := range g_process { // 當前程序列表中的路徑
+			if prog.name == fileName {
+				isRunning = true
+				break
+			}
+		}
+		if !isRunning {
+			// log(logF(), LogLevelWarning, "未在运行: "+path)
+			backgroundRunPath(path)
+		}
+	}
+}
+
+func backgroundRunPath(path string) {
+	var pathArr []string = strings.Split(path, " ")
+	var name string = pathArr[0]
+	var argv []string = append(pathArr[:0], pathArr[1:]...)
+	pid, err := backgroundRun(name, argv...)
+	if err != nil {
+		log(logF(), LogLevelError, name+" 启动失败! "+err.Error())
+	} else {
+		log(logF(), LogLevelOK, "已启动 "+name+" 进程号: "+strconv.Itoa(pid))
+	}
 }

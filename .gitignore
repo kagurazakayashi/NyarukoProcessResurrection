@@ -4,3 +4,4 @@ i18n/
 *.log
 vendor
 bin
+test/test*

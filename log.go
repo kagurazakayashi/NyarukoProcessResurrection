@@ -212,22 +212,7 @@ func tabstr(str string, separator string, toLength int, isRight bool, autoSub bo
 	return newStr
 }
 
-// join 陣列轉字串
-// stringArray 原始字串陣列
-// separator 分隔符
-func join(stringArray []string, separator string) string {
-	var end int = len(stringArray) - 1
-	var newStr string = ""
-	for i, v := range stringArray {
-		newStr += v
-		if i < end {
-			newStr += separator
-		}
-	}
-	return newStr
-}
-
-func printC(strings []string, colors []ConsoleColor) {
+func printC(strings []string, colors []ConsoleColor, compensate int) {
 	var viewLen int = len(strings)
 	var height int = g_height / 2
 	for i := 0; i < len(strings); i++ {
@@ -238,7 +223,7 @@ func printC(strings []string, colors []ConsoleColor) {
 		for i := 0; i < g_width; i++ {
 			line += " "
 		}
-		for i := 0; i < height-viewLen; i++ {
+		for i := 0; i < height-viewLen+compensate; i++ {
 			fmt.Println(line)
 		}
 	}
