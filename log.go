@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -31,6 +32,7 @@ const (
 	LogLevelWarning LogLevel = 2
 	LogLevelError   LogLevel = 3
 	LogLevelClash   LogLevel = 4
+	LogLevelOK      LogLevel = 5
 )
 
 func (p ConsoleColor) toString() string {
@@ -51,6 +53,8 @@ func LogLevelData(lvl LogLevel) ConsoleColor {
 		return ConsoleColorRed
 	case LogLevelClash:
 		return ConsoleColorRed
+	case LogLevelOK:
+		return ConsoleColorGreen
 	default:
 		return ConsoleColorCyan
 	}
@@ -71,8 +75,21 @@ func log(module string, lvl LogLevel, info string) {
 	var timeStr string = time.Now().Format("06-01-02 15:04:05")
 	var dateInfo string = "[" + timeStr + "][" + module + "] " + info
 	var color ConsoleColor = LogLevelData(lvl)
-	var colorStr string = color.toString()
-	ColorOutput.Colorful.WithFrontColor(colorStr).Println(dateInfo)
+	// var colorStr string = color.toString()
+	// ColorOutput.Colorful.WithFrontColor(colorStr).Println(dateInfo)
+	var view2sLen int = len(g_view2s)
+	if view2sLen == 0 {
+		g_view2s = []string{screenBar()}
+		g_view2c = []ConsoleColor{ConsoleColorPurple}
+	}
+	g_view2s = append(g_view2s, dateInfo)
+	g_view2c = append(g_view2c, color)
+	if view2sLen > g_height/2-1 {
+		g_view2s = append(g_view2s[:0], g_view2s[1:]...)
+		g_view2c = append(g_view2c[:0], g_view2c[1:]...)
+		g_view2s[0] = screenBar()
+		g_view2c[0] = ConsoleColorPurple
+	}
 }
 
 // logC 向終端輸出日誌資訊（自定義顏色）
@@ -208,4 +225,30 @@ func join(stringArray []string, separator string) string {
 		}
 	}
 	return newStr
+}
+
+func printC(strings []string, colors []ConsoleColor) {
+	var viewLen int = len(strings)
+	var height int = g_height / 2
+	for i := 0; i < len(strings); i++ {
+		ColorOutput.Colorful.WithFrontColor(colors[i].toString()).Println(strings[i])
+	}
+	if viewLen < height {
+		var line string = ""
+		for i := 0; i < g_width; i++ {
+			line += " "
+		}
+		for i := 0; i < height-viewLen; i++ {
+			fmt.Println(line)
+		}
+	}
+}
+
+func screenBar() string {
+	var line string = ""
+	var title string = "▒▒▒ CONSOLE LOG "
+	for i := 0; i < g_width-len(title); i++ {
+		line += "▒"
+	}
+	return title + line
 }

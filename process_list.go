@@ -87,12 +87,13 @@ func ProcessList() ([]ProcessInfo, error) {
 // processIds, processNames, err := ProcessList()
 // if err != nil { return; }
 func ProcessListPrint(processInfos []ProcessInfo) {
-	var screen []string = []string{
+	g_view1s = []string{
 		"\n PID  |      NAME      | Running Time  | CPU% | MEM(KB) | Command",
-		"------+----------------+---------------+------+---------+-",
+		"======+================+===============+======+=========+=",
 	}
-	screen[0] = tabstr(screen[0], "", g_width, false, true)
-	screen[1] = tabstr(screen[1], "-", g_width, false, true)
+	g_view1c = []ConsoleColor{ConsoleColorCyan, ConsoleColorCyan}
+	g_view1s[0] = tabstr(g_view1s[0], "", g_width, false, true)
+	g_view1s[1] = tabstr(g_view1s[1], "=", g_width, false, true)
 	for _, pInfo := range processInfos {
 		var line []string = []string{}
 		line = append(line, tabstr(strconv.FormatInt(int64(pInfo.id), 10), "", 5, true, true))
@@ -102,18 +103,12 @@ func ProcessListPrint(processInfos []ProcessInfo) {
 		line = append(line, tabstr(strconv.FormatInt(int64(pInfo.mem), 10), "", 7, true, true))
 		line = append(line, tabstr(pInfo.cmd, "", g_width-58, false, true))
 		var lineStr string = join(line, " | ")
-		screen = append(screen, lineStr)
+		g_view1s = append(g_view1s, lineStr)
+		g_view1c = append(g_view1c, ConsoleColorGreen)
+		if len(g_view1s) >= g_height/2 {
+			break
+		}
 	}
-	for i := 0; i < g_height-len(screen); i++ {
-		screen = append(screen, " ")
-	}
-	print(join(screen, "\n"))
-	/* 輸出示例：
-	1 init
-	132 init
-	133 zsh
-	935 process-protection
-	*/
 }
 
 func runTime(fromTimeStamp int64) string {

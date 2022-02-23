@@ -15,21 +15,27 @@ import (
 var (
 	g_width  int
 	g_height int
+	g_view1s []string
+	g_view1c []ConsoleColor
+	g_view2s []string
+	g_view2c []ConsoleColor
 )
 
 func main() {
 	g_width, g_height = terminalWindowSize()
 	setupCloseHandler()
-	log(logF(), LogLevelInfo, "应用程序保活")
-	log(logF(), LogLevelDebug, "加载配置文件...")
+	log(logF(), LogLevelInfo, "加载配置文件...")
 	LoadConfigFile()
+	log(logF(), LogLevelOK, "配置文件加载完成。")
 	for {
 		processInfos, err := ProcessList()
 		if err != nil {
 			break
 		}
 		ProcessListPrint(processInfos)
-		time.Sleep(time.Duration(1) * time.Second)
+		printC(g_view1s, g_view1c)
+		printC(g_view2s, g_view2c)
+		time.Sleep(time.Duration(3) * time.Second)
 	}
 }
 
